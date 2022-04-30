@@ -1,0 +1,11 @@
+version: '3'
+services:
+  ParserDocblockBundle:
+    image: cadoteu/symfony5
+    container_name: ParserDocblockBundle
+    volumes:
+      - .:/app
+    restart: always
+    ports:
+      - 80
+ 
