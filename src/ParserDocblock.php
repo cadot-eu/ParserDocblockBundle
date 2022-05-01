@@ -34,10 +34,21 @@ class ParserDocblock
                 } else {
                     $key = strtolower($this->clean(substr($doc, 0, $deb)));
                     //merge or create
-                    if (isset($options[$key]))
-                        $options[$key] =  json_encode(array_merge(json_decode($options[$key], true), json_decode(substr($doc, $deb + 1), JSON_UNESCAPED_SLASHES)));
-                    else
-                        $options[$key] = substr($doc, $deb + 1);
+                    if (isset($options[$key])) {
+                        //control presence of key and value
+                        if (is_array(json_decode(substr($doc, $deb + 1), true)))
+                            $val = json_decode(substr($doc, $deb + 1), true);
+                        else
+                            $val = json_decode('{"' . substr($doc, $deb + 1) . '":""}', true);
+                        $options[$key] =  array_merge($options[$key], $val);
+                    } else {
+                        //control presence of key and value
+                        if (is_array(json_decode(substr($doc, $deb + 1), true))) {
+                            //control si subvalue
+                            $options[$key] = json_decode(substr($doc, $deb + 1), true);
+                        } else
+                            $options[$key] = json_decode('{"' . substr($doc, $deb + 1) . '":""}', true);
+                    }
                 }
             }
         }
@@ -58,9 +69,16 @@ class ParserDocblock
         return '';
     }
 
-    public function getType(): string
+    public function getType(): array
     {
-        return isset($this->property->getAttributes()[0]) && isset($this->property->getAttributes()[0]->getArguments()['type']) ? $this->property->getAttributes()[0]->getArguments()['type'] : '';
+        $tab = [];
+        foreach ($this->property->getAttributes() as $attr) {
+            if (strpos($attr->getName(), 'ORM\Column') != false)
+                $tab[] = isset($attr) && isset($attr->getArguments()['type']) ? $attr->getArguments()['type'] : '';
+            else
+                $tab[] = strtolower(array_reverse(explode('\\', $attr->getName()))[0]);
+        }
+        return $tab;
     }
 
     public function clean($string): string

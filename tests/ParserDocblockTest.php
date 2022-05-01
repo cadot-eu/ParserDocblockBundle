@@ -37,7 +37,25 @@ class ParserDocblockTest extends TestCase
         };
         $property = new ReflectionProperty(get_class($a), 'prop');
         $pc = new ParserDocblock($property);
-        $this->assertEquals($pc->getType($property), 'string');
+        $this->assertEquals(json_encode($pc->getType($property)), '["string"]');
+    }
+    /* -------------------------------- test types ------------------------------- */
+    public function testTypes(): void
+    {
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            #[Assert\File(
+                maxSize: "100M",
+                maxSizeMessage: "la taille autorisée de 100M est dépassée.",
+                mimeTypes: ["image/jpeg", "image/png"],
+                mimeTypesMessage: "Votre fichier n'est pas une image."
+            )]
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        $this->assertEquals(json_encode($pc->getType($property)), '["string","file"]');
     }
 
     /* ------------------------------ test de clean ----------------------------- */
@@ -86,7 +104,7 @@ class ParserDocblockTest extends TestCase
         $pc = new ParserDocblock($property);
         //test for no recognized for alias
         $this->assertEquals($pc->getAlias(), '');
-        $this->assertEquals(json_encode($pc->getOptions()), '{"twig":"{\"test\":\"toto\"}"}');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"twig":{"test":"toto"}}');
     }
     //Multiple identical actions test
     public function testActionMultipleWithValue(): void
@@ -104,6 +122,60 @@ class ParserDocblockTest extends TestCase
         $pc = new ParserDocblock($property);
         //test for no recognized for alias
         $this->assertEquals($pc->getAlias(), '');
-        $this->assertEquals(json_encode($pc->getOptions()), '{"twig":"{\"test\":\"toto\",\"tutu\":\"tata\"}"}');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"twig":{"test":"toto","tutu":"tata"}}');
+    }
+
+    //Multiple identical actions test
+    public function testActionWithValueButNotCompleted(): void
+    {
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            /**
+             * TWIG:encode
+             */
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        //test for no recognized for alias
+        $this->assertEquals($pc->getAlias(), '');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"twig":{"encode":""}}');
+    }
+    //Multiple identical actions test
+    public function testActionMultipleWithValueButNotCompleted(): void
+    {
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            /**
+             * TPL:no_index
+             * TPL:no_form
+             */
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        //test for no recognized for alias
+        $this->assertEquals($pc->getAlias(), '');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"tpl":{"no_index":"","no_form":""}}');
+    }
+    //Multiple identical actions test
+    public function testActionMultipleDifferentWithValueButNotCompleted(): void
+    {
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            /**
+             * TPL:no_index
+             * OPT:{"required":"0","label":"url pour SEO"}
+             */
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        //test for no recognized for alias
+        $this->assertEquals($pc->getAlias(), '');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"tpl":{"no_index":""},"opt":{"required":"0","label":"url pour SEO"}}');
     }
 }
