@@ -2,14 +2,13 @@
 
 namespace Cadoteu\ParserDocblockBundle\Tests;
 
-use ReflectionProperty;
 use Cadoteu\ParserDocblockBundle\ParserDocblock;
-use PHPUnit\Framework\TestCase;
 use Doctrine\DBAL\Types\Types;
-
+use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 /** It's a helper class to parse a comment line of doctrine
- * format dockblock 
+ * format dockblock
  */
 class ParserDocblockTest extends TestCase
 {
@@ -18,15 +17,16 @@ class ParserDocblockTest extends TestCase
     {
         $a = new class()
         {
-            /** 
-             * choice 
+            /**
+             * choice
              */
-            public $prop  = '';
+            public $prop = '';
         };
         $property = new ReflectionProperty(get_class($a), 'prop');
         $pc = new ParserDocblock($property);
         $this->assertEquals($pc->getAlias($property), 'choice');
     }
+
     /* -------------------------------- test type ------------------------------- */
     public function testType(): void
     {
@@ -39,6 +39,7 @@ class ParserDocblockTest extends TestCase
         $pc = new ParserDocblock($property);
         $this->assertEquals($pc->getType($property), 'string');
     }
+
     /* ------------------------------ test de clean ----------------------------- */
     public function testClean(): void
     {
@@ -51,6 +52,7 @@ class ParserDocblockTest extends TestCase
         $pc = new ParserDocblock($property);
         $this->assertEquals($pc->Clean('   *   * *  *  ***** clean **  \n'), 'clean **  \n');
     }
+
     //Test Action without value no_index
     public function testAction(): void
     {
@@ -68,10 +70,42 @@ class ParserDocblockTest extends TestCase
         $this->assertEquals($pc->getAlias(), '');
         $this->assertEquals($pc->getOptions(), 'no_index');
     }
-    //Action test with value TWIG=...
 
-    //Multiple identical actions test 
-
+    //Action test with value TWIG:...
+    public function testActionWithValue(): void
+    {
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            /**
+             * TWIG:{"test":"toto"}
+             */
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        //test for no recognized for alias
+        $this->assertEquals($pc->getAlias(), '');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"TWIG":"{\"test\":\"toto\"}"}');
+    }
+    //Multiple identical actions test
+    public function testActionMultipleWithValue(): void
+    {
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            /**
+             * TWIG:{"test":"toto"}
+             *  TWIG:{"tutu":"tata"}
+             */
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        //test for no recognized for alias
+        $this->assertEquals($pc->getAlias(), '');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"TWIG":"{\"test\":\"toto\",\"tutu\":\"tata\"}"}');
+    }
     //Action test with value and key
 
     //Action test with many values and keys
@@ -79,5 +113,4 @@ class ParserDocblockTest extends TestCase
     //Action test multiples with value and key
 
     //Action test multilples with many value and key
-
 }

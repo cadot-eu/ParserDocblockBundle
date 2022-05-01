@@ -10,11 +10,8 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 class ParserDocblockExtension extends Extension
 {
     /**
-     * Loads our service, accessible 
+     * Loads our service, accessible
      *
-     * @param array $configs
-     * @param ContainerBuilder $container
-     * @return void
      * @throws \Exception
      */
     public function load(array $configs, ContainerBuilder $container)
@@ -26,9 +23,6 @@ class ParserDocblockExtension extends Extension
 
     /**
      * Loads the configuration in, with any defaults
-     *
-     * @param array $configs
-     * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
      */
     protected function loadConfiguration(array $configs, ContainerBuilder $container): void
     {
