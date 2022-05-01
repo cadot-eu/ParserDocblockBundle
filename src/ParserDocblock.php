@@ -22,7 +22,7 @@ class ParserDocblock
         $docs = $this->property->getDocComment();
         $tab = explode("\n", $docs);
         //Return an option that is not an alias
-        if (strpos($tab[1], ':') === false && !in_array($this->clean($tab[1]), $this->alias)) {
+        if (isset($tab[1]) && strpos($tab[1], ':') === false && !in_array($this->clean($tab[1]), $this->alias)) {
             return $this->clean($tab[1]);
         }
         foreach (explode("\n", $docs) as $doc) {
@@ -30,13 +30,14 @@ class ParserDocblock
             if ($this->clean($doc) != '') {
                 //We look if we have an action and value
                 if (($deb = strpos($doc, ':')) === false) {
-                    $options[$this->clean(substr($doc, 0, $deb))] = $this->clean($doc);
+                    $options[strtolower($this->clean(substr($doc, 0, $deb)))] = $this->clean($doc);
                 } else {
+                    $key = strtolower($this->clean(substr($doc, 0, $deb)));
                     //merge or create
-                    if (isset($options[$this->clean(substr($doc, 0, $deb))]))
-                        $options[strtolower($this->clean(substr($doc, 0, $deb)))] =  json_encode(array_merge(json_decode($options[$this->clean(substr($doc, 0, $deb))], true), json_decode(substr($doc, $deb + 1), JSON_UNESCAPED_SLASHES)));
+                    if (isset($options[$key]))
+                        $options[$key] =  json_encode(array_merge(json_decode($options[$key], true), json_decode(substr($doc, $deb + 1), JSON_UNESCAPED_SLASHES)));
                     else
-                        $options[strtolower($this->clean(substr($doc, 0, $deb)))] = substr($doc, $deb + 1);
+                        $options[$key] = substr($doc, $deb + 1);
                 }
             }
         }
@@ -50,7 +51,7 @@ class ParserDocblock
         }
         $docs = $this->property->getDocComment();
         $tab = explode("\n", $docs);
-        if (strpos($tab[1], ':') === false && in_array($this->clean($tab[1]), $this->alias)) {
+        if (isset($tab[1]) && strpos($tab[1], ':') === false && in_array($this->clean($tab[1]), $this->alias)) {
             return $this->clean($tab[1]);
         }
         //Dans les autres cas

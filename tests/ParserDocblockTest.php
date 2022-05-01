@@ -86,7 +86,7 @@ class ParserDocblockTest extends TestCase
         $pc = new ParserDocblock($property);
         //test for no recognized for alias
         $this->assertEquals($pc->getAlias(), '');
-        $this->assertEquals(json_encode($pc->getOptions()), '{"TWIG":"{\"test\":\"toto\"}"}');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"twig":"{\"test\":\"toto\"}"}');
     }
     //Multiple identical actions test
     public function testActionMultipleWithValue(): void
@@ -96,7 +96,7 @@ class ParserDocblockTest extends TestCase
             #[ORM\Column(type: Types::STRING, length: 255)]
             /**
              * TWIG:{"test":"toto"}
-             *  TWIG:{"tutu":"tata"}
+             * TWIG:{"tutu":"tata"}
              */
             private $prop;
         };
@@ -104,6 +104,6 @@ class ParserDocblockTest extends TestCase
         $pc = new ParserDocblock($property);
         //test for no recognized for alias
         $this->assertEquals($pc->getAlias(), '');
-        $this->assertEquals(json_encode($pc->getOptions()), '{"TWIG":"{\"test\":\"toto\",\"tutu\":\"tata\"}"}');
+        $this->assertEquals(json_encode($pc->getOptions()), '{"twig":"{\"test\":\"toto\",\"tutu\":\"tata\"}"}');
     }
 }
