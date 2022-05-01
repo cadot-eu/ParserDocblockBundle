@@ -106,11 +106,4 @@ class ParserDocblockTest extends TestCase
         $this->assertEquals($pc->getAlias(), '');
         $this->assertEquals(json_encode($pc->getOptions()), '{"TWIG":"{\"test\":\"toto\",\"tutu\":\"tata\"}"}');
     }
-    //Action test with value and key
-
-    //Action test with many values and keys
-
-    //Action test multiples with value and key
-
-    //Action test multilples with many value and key
 }
