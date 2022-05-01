@@ -1,8 +1,8 @@
 version: '3'
 services:
-  ParserDocblockBundle:
+  parser-docblock-bundle:
     image: cadoteu/symfony5
-    container_name: ParserDocblockBundle
+    container_name: parser-docblock-bundle
     volumes:
       - .:/app
     restart: always

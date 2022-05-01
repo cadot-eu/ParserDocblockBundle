@@ -2,54 +2,82 @@
 
 namespace Cadoteu\ParserDocblockBundle\Tests;
 
-use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Cadoteu\ParserDocblockBundle\ParserDocblock;
+use PHPUnit\Framework\TestCase;
+use Doctrine\DBAL\Types\Types;
+
 
 /** It's a helper class to parse a comment line of doctrine
  * format dockblock 
  */
 class ParserDocblockTest extends TestCase
 {
-    public function testCleaned(): void
+    /* ------------------------------- test alias ------------------------------- */
+    public function testAlias(): void
     {
-        $pc = new ParserDocblock('     * ORDRE=id=>DESC***   **   *** ');
-        $this->assertEquals($pc->getCleaned(), 'ORDRE=id=>DESC');
+        $a = new class()
+        {
+            /** 
+             * choice 
+             */
+            public $prop  = '';
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        $this->assertEquals($pc->getAlias($property), 'choice');
     }
+    /* -------------------------------- test type ------------------------------- */
     public function testType(): void
     {
-        $pc = new ParserDocblock('     * ORDRE =id=>DESC***   **   *** ');
-        $this->assertEquals($pc->getType(), 'ORDRE');
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        $this->assertEquals($pc->getType($property), 'string');
     }
+    /* ------------------------------ test de clean ----------------------------- */
+    public function testClean(): void
+    {
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        $this->assertEquals($pc->Clean('   *   * *  *  ***** clean **  \n'), 'clean **  \n');
+    }
+    //Test Action without value no_index
+    public function testAction(): void
+    {
+        $a = new class()
+        {
+            #[ORM\Column(type: Types::STRING, length: 255)]
+            /**
+             * no_index
+             */
+            private $prop;
+        };
+        $property = new ReflectionProperty(get_class($a), 'prop');
+        $pc = new ParserDocblock($property);
+        //test for no recognized for alias
+        $this->assertEquals($pc->getAlias(), '');
+        $this->assertEquals($pc->getOptions(), 'no_index');
+    }
+    //Action test with value TWIG=...
 
-    public function testTypeWithArobase(): void
-    {
-        $pc = new ParserDocblock('    * @ORM\Column(type="integer")');
-        $this->assertEquals($pc->getType(), null);
-    }
-    public function testVar(): void
-    {
-        $pc = new ParserDocblock('     * ORDRE= id =>DESC***   **   *** ');
-        $this->assertEquals($pc->getVar(), 'id');
-    }
-    public function testVarShort(): void
-    {
-        $pc = new ParserDocblock('     * ORDRE= id ');
-        $this->assertEquals($pc->getVar(), 'id');
-    }
-    public function testVarWithArobase(): void
-    {
-        $pc = new ParserDocblock('    * @ORM\Column(type="string", length=255)');
-        $this->assertNull($pc->getVar());
-    }
-    public function testVal(): void
-    {
-        $pc = new ParserDocblock('     * ORDRE =id=>DESC***   **   *** ');
-        $this->assertEquals($pc->getVal(), 'DESC');
-    }
-    //ATTR=options=>'{"toolbar":"simple"}'
-    // public function testValDecompose(): void
-    // {
-    //     $pc = new parsercommentHelper("options=>'{"toolbar":"simple"}'");
-    //     $this->assertEquals($pc->getVal(), 'DESC');
-    // }
+    //Multiple identical actions test 
+
+    //Action test with value and key
+
+    //Action test with many values and keys
+
+    //Action test multiples with value and key
+
+    //Action test multilples with many value and key
+
 }
