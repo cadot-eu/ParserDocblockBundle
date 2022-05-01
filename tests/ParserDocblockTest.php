@@ -37,7 +37,7 @@ class ParserDocblockTest extends TestCase
         };
         $property = new ReflectionProperty(get_class($a), 'prop');
         $pc = new ParserDocblock($property);
-        $this->assertEquals(json_encode($pc->getType($property)), '["string"]');
+        $this->assertEquals($pc->getType($property), 'string');
     }
     /* -------------------------------- test types ------------------------------- */
     public function testTypes(): void
@@ -55,7 +55,7 @@ class ParserDocblockTest extends TestCase
         };
         $property = new ReflectionProperty(get_class($a), 'prop');
         $pc = new ParserDocblock($property);
-        $this->assertEquals(json_encode($pc->getType($property)), '["string","file"]');
+        $this->assertEquals($pc->getType($property), 'file');
     }
 
     /* ------------------------------ test de clean ----------------------------- */

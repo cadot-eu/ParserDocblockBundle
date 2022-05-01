@@ -69,14 +69,14 @@ class ParserDocblock
         return '';
     }
 
-    public function getType(): array
+    public function getType(): string
     {
-        $tab = [];
+        $tab = '';
         foreach ($this->property->getAttributes() as $attr) {
-            if (strpos($attr->getName(), 'ORM\Column') != false)
-                $tab[] = isset($attr) && isset($attr->getArguments()['type']) ? $attr->getArguments()['type'] : '';
+            if (strpos($attr->getName(), 'ORM\Column') != false && !$tab)
+                $tab = isset($attr) && isset($attr->getArguments()['type']) ? $attr->getArguments()['type'] : '';
             else
-                $tab[] = strtolower(array_reverse(explode('\\', $attr->getName()))[0]);
+                $tab = strtolower(array_reverse(explode('\\', $attr->getName()))[0]);
         }
         return $tab;
     }
