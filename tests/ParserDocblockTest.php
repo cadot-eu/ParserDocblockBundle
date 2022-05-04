@@ -19,6 +19,7 @@ class ParserDocblockTest extends TestCase
         {
             /**
              * choice
+             * tpl:no_index
              */
             public $prop = '';
         };
@@ -27,8 +28,9 @@ class ParserDocblockTest extends TestCase
         $this->assertEquals($pc->getAlias($property), 'choice');
     }
 
-    /* -------------------------------- test type ------------------------------- */
-    public function testType(): void
+
+    /* -------------------------------- test type 2------------------------------- */
+    public function testType2(): void
     {
         $a = new class()
         {
@@ -71,7 +73,7 @@ class ParserDocblockTest extends TestCase
         $this->assertEquals($pc->Clean('   *   * *  *  ***** clean **  \n'), 'clean **  \n');
     }
 
-    //Test Action without value no_index
+    /* ------------------- Test Action without value no_index ------------------- */
     public function testAction(): void
     {
         $a = new class()
@@ -89,7 +91,7 @@ class ParserDocblockTest extends TestCase
         $this->assertEquals($pc->getOptions(), 'no_index');
     }
 
-    //Action test with value TWIG:...
+    /* --------------------- Action test with value TWIG:... -------------------- */
     public function testActionWithValue(): void
     {
         $a = new class()
@@ -106,7 +108,7 @@ class ParserDocblockTest extends TestCase
         $this->assertEquals($pc->getAlias(), '');
         $this->assertEquals(json_encode($pc->getOptions()), '{"twig":{"test":"toto"}}');
     }
-    //Multiple identical actions test
+    /* --------------------- Multiple identical actions test -------------------- */
     public function testActionMultipleWithValue(): void
     {
         $a = new class()
@@ -125,7 +127,7 @@ class ParserDocblockTest extends TestCase
         $this->assertEquals(json_encode($pc->getOptions()), '{"twig":{"test":"toto","tutu":"tata"}}');
     }
 
-    //Multiple identical actions test
+    /* --------------------- Multiple identical actions test -------------------- */
     public function testActionWithValueButNotCompleted(): void
     {
         $a = new class()

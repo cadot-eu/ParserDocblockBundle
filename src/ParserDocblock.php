@@ -2,29 +2,101 @@
 
 namespace Cadoteu\ParserDocblockBundle;
 
+use Symfony\Component\Config\Definition\Exception\Exception;
+
 class ParserDocblock
 {
-    /**
-     * @var \ReflectionProperty
-     */
-    protected $property;
+    private
+        $alias,
+        $Entity,
+        $reflexion,
+        $selects,
+        $options,
+        $types,
+        $properties,
+        $baseAlias;
 
-    private $alias = ['choice'];
 
-    public function __construct(\ReflectionProperty $property)
+    public function __construct(string $entity = '', array $baseAlias = ['simple', 'choice', 'choiceenplace', 'entity', 'collection', 'color', 'password', 'hidden', 'image'])
     {
-        $this->property = $property;
+        $this->setEntity($entity);
+        $this->baseAlias = $baseAlias;
+        foreach ($this->reflexion->getProperties() as $property) {
+            $name = $this->getName($property);
+            $this->options[$name] = $this->parseOptions($property);
+            $this->alias[$name] = $alias = $this->getAlias($property);
+            $this->types[$name] = $type = $this->getType($property);
+            //on prend l'alias en priorité
+            $this->selects[$name] = $alias != '' ? $alias : $type;
+            $this->properties[$name] = $property;
+        }
     }
 
-    public function getOptions()
+    /**
+     * It sets the entity and the reflection of the class.
+     * 
+     * @param string The name of the class that is being called.
+     */
+    public function setEntity($string): void
+    {
+        $this->Entity = ucfirst($string);
+        $class = 'App\Entity\\' . $this->Entity;
+        $this->reflexion = new \ReflectionClass(new $class);
+    }
+
+    /**
+     *  Returns the reflection of the class
+     * 
+     * @return \ReflectionClass The reflection class of the class that is being called.
+     */
+    public function getReflexion(): \ReflectionClass
+    {
+        return $this->reflexion;
+    }
+    public function getAttributes(string $name): array
+    {
+        return $this->reflexion->getProperty($name)->getAttributes();
+    }
+
+    public function getAttribute(string $name, $nameAttribute): \ReflectionAttribute
+    {
+        foreach ($this->getAttributes($name) as  $num => $attribute) {
+            if (is_string($nameAttribute) && $attribute->getName() == $nameAttribute) return $attribute;
+            if (is_integer($nameAttribute) && $num == $nameAttribute) return $attribute;
+        };
+    }
+    public function getArgumentsOfAttributes(string $name, $nameAttribute): array
+    {
+        return $this->getAttribute($name, $nameAttribute)->getArguments();
+    }
+    public function getArgumentOfAttributes(string $name, $nameAttribute, $nameArgument)
+    {
+        return $this->getAttribute($name, $nameAttribute)->getArguments()[$nameArgument];
+    }
+    public function getProperty($name): \ReflectionProperty
+    {
+        return $this->properties[$name];
+    }
+    public function getSelect($name): string
+    {
+        return $this->selects[$name];
+    }
+    public function getOptions(): array
+    {
+        return $this->options;
+    }
+
+
+    /**
+     * It takes a property and returns an array of options
+     * 
+     * @param \ReflectionProperty property The property to be processed
+     */
+    private function parseOptions(\ReflectionProperty $property)
     {
         $options = [];
-        $docs = $this->property->getDocComment();
+        $docs = $property->getDocComment();
         $tab = explode("\n", $docs);
-        //Return an option that is not an alias
-        if (isset($tab[1]) && strpos($tab[1], ':') === false && !in_array($this->clean($tab[1]), $this->alias)) {
-            return $this->clean($tab[1]);
-        }
         foreach (explode("\n", $docs) as $doc) {
             //si on a une valeur
             if ($this->clean($doc) != '') {
@@ -36,57 +108,97 @@ class ParserDocblock
                     //merge or create
                     if (isset($options[$key])) {
                         //control presence of key and value
-                        if (is_array(json_decode(substr($doc, $deb + 1), true)))
-                            $val = json_decode(substr($doc, $deb + 1), true);
-                        else
-                            $val = json_decode('{"' . substr($doc, $deb + 1) . '":""}', true);
+                        if (is_array(json_decode(substr($doc, $deb + 1), true))) {
+                            $val = $this->jsondecode(substr($doc, $deb + 1), true);
+                        } else {
+                            $val = $this->jsondecode('{"' . substr($doc, $deb + 1) . '":""}', true);
+                        }
                         $options[$key] =  array_merge($options[$key], $val);
                     } else {
                         //control presence of key and value
                         if (is_array(json_decode(substr($doc, $deb + 1), true))) {
-                            //control si subvalue
-                            $options[$key] = json_decode(substr($doc, $deb + 1), true);
-                        } else
-                            $options[$key] = json_decode('{"' . substr($doc, $deb + 1) . '":""}', true);
+                            $options[$key] = $this->jsondecode(substr($doc, $deb + 1), true);
+                        } else {
+                            $options[$key] = $this->jsondecode('{"' . substr($doc, $deb + 1) . '":""}', true);
+                        }
                     }
                 }
             }
         }
         return $options;
     }
-
-    public function getAlias(): string
+    /**
+     * It takes a string, decodes it as JSON, and returns the decoded object
+     * 
+     * @param string The string being decoded.
+     * @param bool If this is true, then the object will be converted into an associative array.
+     * 
+     * @return the value of the variable .
+     */
+    public function jsondecode($string, $bool = false)
     {
-        if ($this->property->getName() == 'id') {
-            return '';
-        }
-        $docs = $this->property->getDocComment();
-        $tab = explode("\n", $docs);
-        if (isset($tab[1]) && strpos($tab[1], ':') === false && in_array($this->clean($tab[1]), $this->alias)) {
-            return $this->clean($tab[1]);
-        }
-        //Dans les autres cas
-        return '';
+        $json = json_decode($string,  $bool);
+        if ($json == null && $string != '') dd('!!erreur de syntaxe sur' . $string);
+        return $json;
     }
 
-    public function getType(): string
+
+    /**
+     * It returns the type of the property
+     * 
+     * @param \ReflectionProperty property The property to be analyzed
+     * 
+     * @return string The type of the property.
+     */
+    public function getType(\ReflectionProperty $property): string
     {
         $tab = '';
-        foreach ($this->property->getAttributes() as $attr) {
-            if (strpos($attr->getName(), 'ORM\Column') != false && !$tab)
+        foreach ($property->getAttributes() as $attr) {
+            $fin = strtolower(array_reverse(explode('\\', $attr->getName()))[0]);
+            if ($fin == 'column' && !$tab)
                 $tab = isset($attr) && isset($attr->getArguments()['type']) ? $attr->getArguments()['type'] : '';
-            else
+            if ($fin != 'column')
                 $tab = strtolower(array_reverse(explode('\\', $attr->getName()))[0]);
         }
         return $tab;
     }
 
+    /**
+     * It removes all the characters in the second parameter from the first parameter
+     * 
+     * @param string The string to be cleaned.
+     * 
+     * @return string The string with all the whitespace removed.
+     */
     public function clean($string): string
     {
         return trim($string, " \t\n\r\0\x0B*\/\\");
     }
-    public function getName(): string
+    /**
+     * This function returns the name of the property
+     * 
+     * @param \ReflectionProperty property The property that is being serialized.
+     * 
+     * @return string The name of the property.
+     */
+    public function getName(\ReflectionProperty $property): string
     {
-        return $this->property->getName();
+        return $property->getName();
+    }
+    /**
+     * It gets the alias of a property
+     * 
+     * @param \ReflectionProperty property The property to be processed
+     * 
+     * @return string The alias of the property.
+     */
+    private function getAlias(\ReflectionProperty $property): string
+    {
+        $docs = $property->getDocComment();
+        $tab = explode("\n", $docs);
+        if (isset($tab[1]) && strpos($tab[1], ':') === false && in_array($this->clean($tab[1]), $this->baseAlias)) {
+            return $this->clean($tab[1]);
+        }
+        return '';
     }
 }
