@@ -25,7 +25,7 @@ class ParserDocblock
             $name = $this->getName($property);
             $this->options[$name] = $this->parseOptions($property);
             $this->alias[$name] = $alias = $this->getAlias($property);
-            $this->types[$name] = $type = $this->getType($property);
+            $this->types[$name] = $type = $this->findType($property);
             //on prend l'alias en priorité
             $this->selects[$name] = $alias != '' ? $alias : $type;
             $this->properties[$name] = $property;
@@ -85,7 +85,10 @@ class ParserDocblock
     {
         return $this->options;
     }
-
+    public function getType(string $name): string
+    {
+        return $this->types[$name];
+    }
 
     /**
      * It takes a property and returns an array of options
@@ -150,7 +153,7 @@ class ParserDocblock
      * 
      * @return string The type of the property.
      */
-    public function getType(\ReflectionProperty $property): string
+    public function findType(\ReflectionProperty $property): string
     {
         $tab = '';
         foreach ($property->getAttributes() as $attr) {
